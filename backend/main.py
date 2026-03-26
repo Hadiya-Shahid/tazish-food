@@ -8,8 +8,8 @@ app = FastAPI(title="Tazish Food Backend API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, restrict this to the frontend URL
-    allow_credentials=True,
+    allow_origins=["*"], # In production, restrict this to exactly your frontend Vercel URL
+    allow_credentials=False, # Must be False if allow_origins is "*"
     allow_methods=["*"],
     allow_headers=["*"],
 )
