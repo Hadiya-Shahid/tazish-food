@@ -12,7 +12,7 @@ export default function Orders() {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/orders/");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/orders/`);
       if (res.ok) {
         const data = await res.json();
         setOrders(data);
@@ -126,3 +126,4 @@ export default function Orders() {
     </div>
   );
 }
+

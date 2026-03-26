@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: tazish-backend
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      # Add GOOGLE_APPLICATION_CREDENTIALS below in the Render dashboard
+      # Set the value to the raw JSON content of your google_credentials.json

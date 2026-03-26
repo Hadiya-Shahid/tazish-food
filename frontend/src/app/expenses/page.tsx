@@ -18,7 +18,7 @@ export default function Expenses() {
 
   const fetchExpenses = () => {
     setLoading(true);
-    fetch("http://localhost:8000/api/expenses/")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/expenses/`)
       .then(res => res.json())
       .then(data => setExpenses(Array.isArray(data) ? data : []))
       .catch(console.error)
@@ -36,7 +36,7 @@ export default function Expenses() {
     if (!amount) return;
     setAdding(true);
     try {
-      const res = await fetch("http://localhost:8000/api/expenses/", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/expenses/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ category, amount: Number(amount), description })
@@ -165,3 +165,4 @@ export default function Expenses() {
     </div>
   );
 }
+

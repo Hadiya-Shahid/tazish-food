@@ -14,7 +14,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/orders/")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/orders/`)
       .then(res => res.json())
       .then(data => setOrders(Array.isArray(data) ? data : []))
       .catch(console.error)
@@ -134,3 +134,4 @@ export default function Home() {
     </div>
   );
 }
+

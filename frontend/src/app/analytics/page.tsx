@@ -13,8 +13,8 @@ export default function Analytics() {
 
   useEffect(() => {
     Promise.all([
-      fetch("http://localhost:8000/api/orders/").then(r => r.json()),
-      fetch("http://localhost:8000/api/expenses/").then(r => r.json())
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/orders/`).then(r => r.json()),
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/expenses/`).then(r => r.json())
     ]).then(([ordersData, expensesData]) => {
       setOrders(Array.isArray(ordersData) ? ordersData : []);
       setExpenses(Array.isArray(expensesData) ? expensesData : []);
@@ -86,3 +86,4 @@ export default function Analytics() {
     </div>
   );
 }
+
