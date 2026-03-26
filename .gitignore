@@ -1,0 +1,44 @@
+# --- Frontend (Next.js) ---
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Backend (Python / FastAPI) ---
+__pycache__/
+*.py[cod]
+*$py.class
+backend/venv/
+backend/.venv/
+backend/env/
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+
+# --- Environment Variables & Secrets (CRITICAL) ---
+.env
+*.env
+backend/.env
+frontend/.env
+
+# Google Service Account Key (CRITICAL: Do NOT commit)
+google_credentials.json
+backend/google_credentials.json
+
+# --- IDE & OS Files ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Project specific temporary scripts ---
+backend/add_headers.py
