@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic
+supabase
+gspread
+pytesseract
+openai-whisper
+python-multipart
+sqlalchemy
+python-dotenv
