@@ -1,14 +1,20 @@
 "use client";
-import { useState } from "react";
-import { Mic, Image as ImageIcon, Keyboard, Send, Plus, Trash2 } from "lucide-react";
+import { useState, useRef } from "react";
+import { Mic, Image as ImageIcon, Keyboard, Send, Plus, Trash2, Loader2, StopCircle } from "lucide-react";
 
 export default function CreateOrder() {
   const [method, setMethod] = useState("manual");
   
   const [customerName, setCustomerName] = useState("");
   const [advancePayment, setAdvancePayment] = useState("");
-  const [items, setItems] = useState([{ name: "", quantity: 1, price: "" }]);
+  const [items, setItems] = useState([{ name: "", quantity: 1, price: "" as number | string }]);
   const [status, setStatus] = useState("idle");
+
+  // AI States
+  const [isRecording, setIsRecording] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const handleAddItem = () => {
     setItems([...items, { name: "", quantity: 1, price: "" }]);
@@ -24,6 +30,95 @@ export default function CreateOrder() {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
     setItems(newItems);
+  };
+
+  const fillFormWithAI = (data: any) => {
+    setCustomerName(data.customer_name || "");
+    setAdvancePayment(data.advance_payment || "");
+    if (data.items && data.items.length > 0) {
+      setItems(data.items);
+    }
+    setMethod("manual");
+  };
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      processVoiceTranscript(transcript);
+      return;
+    }
+    
+    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Voice recognition is not supported in this browser. Try Chrome or Safari.");
+      return;
+    }
+    
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    
+    recognition.onresult = (event: any) => {
+      let curr = "";
+      for (let i = 0; i < event.results.length; i++) {
+        curr += event.results[i][0].transcript;
+      }
+      setTranscript(curr);
+    };
+    
+    recognition.onerror = (e: any) => {
+      console.error(e);
+      setIsRecording(false);
+    };
+    
+    recognition.start();
+    setIsRecording(true);
+    setTranscript("");
+  };
+
+  const processVoiceTranscript = async (text: string) => {
+    if (!text.trim()) return;
+    setStatus("loading");
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/ai/parse-text`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+      const data = await res.json();
+      fillFormWithAI(data);
+      setStatus("idle");
+    } catch(err) {
+      console.error(err);
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 3000);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/ai/parse-image`, {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      fillFormWithAI(data.parsed_order);
+    } catch(err) {
+      console.error(err);
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 3000);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,16 +152,20 @@ export default function CreateOrder() {
         body: JSON.stringify(payload)
       });
       
-      if (!response.ok) throw new Error("Failed to create order");
+      if (!response.ok) {
+        const errData = await response.json().catch(()=>({}));
+        throw new Error(errData.detail || "Failed to create order");
+      }
       
       setStatus("success");
       setCustomerName("");
       setAdvancePayment("");
       setItems([{ name: "", quantity: 1, price: "" }]);
       
-      setTimeout(() => setStatus("idle"), 3000);
-    } catch (error) {
+      setTimeout(() => setStatus("idle"), 4000);
+    } catch (error: any) {
       console.error(error);
+      alert(error.message); // Fallback to alert to clearly show Render errors if they occur
       setStatus("error");
       setTimeout(() => setStatus("idle"), 3000);
     }
@@ -79,15 +178,15 @@ export default function CreateOrder() {
         <p className="text-gray-400 mt-1">Add a new order manually or using AI assisted tools.</p>
       </header>
 
-      <div className="flex bg-[#1a1a1a] p-1 rounded-xl w-full max-w-md border border-gray-800">
+      <div className="flex bg-[#1a1a1a] p-1 rounded-xl w-full max-w-md border border-gray-800 transition-all">
         {[
           { id: "manual", icon: Keyboard, label: "Manual" },
           { id: "voice", icon: Mic, label: "Voice" },
-          { id: "image", icon: ImageIcon, label: "Scan Image" }
+          { id: "image", icon: ImageIcon, label: "Scan" }
         ].map(m => (
           <button
             key={m.id}
-            onClick={() => setMethod(m.id)}
+            onClick={() => { setMethod(m.id); setStatus("idle"); }}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
               method === m.id ? "bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg" : "text-gray-400 hover:text-white hover:bg-white/5"
             }`}
@@ -108,7 +207,7 @@ export default function CreateOrder() {
             )}
             {status === "error" && (
               <div className="bg-red-500/20 text-red-400 p-4 rounded-xl border border-red-500/30 text-center font-medium transition-all">
-                Failed to create order. Please try again or check backend logs.
+                Failed to create order. Check the alert box for details.
               </div>
             )}
 
@@ -193,7 +292,7 @@ export default function CreateOrder() {
                 className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white font-medium py-3 px-8 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-orange-500/20 disabled:opacity-70"
               >
                 {status === "loading" ? (
-                  <span className="animate-pulse">Processing...</span>
+                  <span className="animate-pulse flex items-center gap-2"><Loader2 size={18} className="animate-spin" /> Saving...</span>
                 ) : (
                   <>
                     <Send size={18} />
@@ -207,33 +306,70 @@ export default function CreateOrder() {
 
         {method === "voice" && (
           <div className="flex flex-col items-center justify-center h-full py-12 space-y-6">
-            <button className="h-32 w-32 rounded-full bg-gradient-to-tr from-orange-500/20 to-red-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400 hover:bg-orange-500 hover:text-white transition-all group relative">
-              <div className="absolute inset-0 bg-orange-500/20 rounded-full animate-ping group-hover:hidden"></div>
-              <Mic size={48} />
-            </button>
-            <div className="text-center">
-              <h3 className="text-xl font-medium text-white">Tap to Speak</h3>
-              <p className="text-gray-400 mt-2 max-w-sm">Say something like: "3 chicken rolls, 5 samosas, advance 500 for Ahmed."</p>
-            </div>
+            {status === "loading" ? (
+               <div className="flex flex-col items-center gap-4 text-orange-500">
+                 <Loader2 size={48} className="animate-spin" />
+                 <p className="text-white">Parsing your speech...</p>
+               </div>
+            ) : (
+              <>
+                <button 
+                  onClick={toggleRecording}
+                  className={`h-32 w-32 rounded-full border flex items-center justify-center transition-all group relative ${
+                    isRecording 
+                      ? "bg-red-500/20 border-red-500 text-red-500" 
+                      : "bg-gradient-to-tr from-orange-500/20 to-red-500/20 border-orange-500/30 text-orange-400 hover:bg-orange-500 hover:text-white"
+                  }`}
+                >
+                  {isRecording ? (
+                    <>
+                      <div className="absolute inset-0 bg-red-500/30 rounded-full animate-ping"></div>
+                      <StopCircle size={48} />
+                    </>
+                  ) : (
+                    <Mic size={48} />
+                  )}
+                </button>
+                <div className="text-center">
+                  <h3 className="text-xl font-medium text-white">{isRecording ? "Recording..." : "Tap to Speak"}</h3>
+                  <p className="text-gray-400 mt-2 max-w-sm h-12 overflow-hidden">
+                    {isRecording ? transcript || "Listening..." : "Say something like: '3 chicken rolls, 5 samosas for Ahmed advance 500'"}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         )}
 
         {method === "image" && (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="border-2 border-dashed border-gray-700 hover:border-orange-500/50 bg-[#0a0a0a] rounded-2xl p-12 w-full max-w-md text-center transition-colors cursor-pointer group">
-              <div className="h-16 w-16 bg-gray-800 group-hover:bg-orange-500/20 text-gray-400 group-hover:text-orange-400 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors">
-                <ImageIcon size={32} />
-              </div>
-              <h3 className="text-lg font-medium text-white mb-2">Upload Order Image</h3>
-              <p className="text-sm text-gray-500">Take a photo of a handwritten order or upload a screenshot from WhatsApp.</p>
-              <button className="mt-6 bg-gray-800 hover:bg-gray-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors">
-                Select File
-              </button>
-            </div>
+            {isUploading ? (
+               <div className="flex flex-col items-center gap-4 text-orange-500 my-10">
+                 <Loader2 size={48} className="animate-spin" />
+                 <p className="text-white animate-pulse">Running OCR scan on image...</p>
+               </div>
+            ) : (
+              <label className="border-2 border-dashed border-gray-700 hover:border-orange-500/50 bg-[#0a0a0a] rounded-2xl p-12 w-full max-w-md text-center transition-colors cursor-pointer group">
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  capture="environment"
+                  className="hidden" 
+                  onChange={handleImageUpload} 
+                />
+                <div className="h-16 w-16 bg-gray-800 group-hover:bg-orange-500/20 text-gray-400 group-hover:text-orange-400 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors">
+                  <ImageIcon size={32} />
+                </div>
+                <h3 className="text-lg font-medium text-white mb-2">Upload Order Image</h3>
+                <p className="text-sm text-gray-500">Take a photo of a handwritten order or upload a screenshot from WhatsApp.</p>
+                <div className="mt-6 bg-gray-800 group-hover:bg-orange-600 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors inline-block pointer-events-none">
+                  Select File or Take Photo
+                </div>
+              </label>
+            )}
           </div>
         )}
       </div>
     </div>
   );
 }
-
