@@ -30,7 +30,9 @@ def get_client():
         
         # Check if the user pasted raw JSON into the environment variable directly
         if env_cred.strip().startswith("{"):
-            cred_dict = json.loads(env_cred)
+            cred_dict = json.loads(env_cred, strict=False)
+            if "private_key" in cred_dict:
+                cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
             credentials = Credentials.from_service_account_info(cred_dict, scopes=SCOPES)
         else:
             # It's treating it as a file path
@@ -54,30 +56,26 @@ def get_client():
         print(f"Error initializing Google Sheets client: {e}")
         return None
 
-def append_order_to_sheet(order_data: dict) -> bool:
+def append_order_to_sheet(order_data: dict):
     """
     Appends an order to the Google Sheet.
-    Returns True if successful, False otherwise.
+    Returns (True, "") if successful, (False, error_message) otherwise.
     """
     gc = get_client()
     if not gc:
-        print("Cannot append order: Google Sheets client not initialized.")
-        return False
+        return False, "Google Sheets client not initialized. Check credentials."
         
     try:
-        # Try to open the sheet by name (or we could change this to open_by_key if the user provides the ID)
+        # Try to open the sheet by name
         try:
              sheet = gc.open(SPREADSHEET_NAME).sheet1
         except gspread.exceptions.SpreadsheetNotFound:
-             print(f"Error: Spreadsheet '{SPREADSHEET_NAME}' not found. Make sure you shared it with the service account email.")
-             return False
+             return False, f"Spreadsheet '{SPREADSHEET_NAME}' not found. Verify it is shared."
 
         # Format the row according to: Date, Customer, Order ID, Total, Discount, Advance, Balance
-        # Assuming order_data has these keys (or we derive them)
         import datetime
         date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        # In the future we could extract this directly from the backend models
         row = [
             date_str,
             order_data.get("customer_name", "Unknown"),
@@ -89,11 +87,9 @@ def append_order_to_sheet(order_data: dict) -> bool:
         ]
         
         sheet.append_row(row)
-        print(f"Successfully appended order {row[2]} to Google Sheet.")
-        return True
+        return True, ""
     except Exception as e:
-        print(f"Error appending order to Google Sheet: {e}")
-        return False
+        return False, str(e)
 
 def get_orders_from_sheet(limit: int = 50) -> list:
     """
@@ -167,9 +163,9 @@ def get_expenses_sheet():
         print(f"Error getting Expenses sheet: {e}")
         return None
 
-def append_expense(expense_data: dict) -> bool:
+def append_expense(expense_data: dict):
     sheet = get_expenses_sheet()
-    if not sheet: return False
+    if not sheet: return False, "Google Sheets client not initialized."
     try:
         import datetime
         date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -180,10 +176,9 @@ def append_expense(expense_data: dict) -> bool:
             expense_data.get("description", "")
         ]
         sheet.append_row(row)
-        return True
+        return True, ""
     except Exception as e:
-        print(f"Error appending expense to Google Sheet: {e}")
-        return False
+        return False, str(e)
 
 def get_expenses_from_sheet(limit: int = 50) -> list:
     sheet = get_expenses_sheet()
