@@ -133,40 +133,51 @@ export default function CreateOrder() {
               
               <div className="space-y-3">
                 {items.map((item, index) => (
-                  <div key={index} className="flex gap-3 items-center">
-                    <input 
-                      required 
-                      value={item.name} 
-                      onChange={e => handleItemChange(index, "name", e.target.value)} 
-                      type="text" 
-                      placeholder="Item name" 
-                      className="flex-1 bg-[#0a0a0a] border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500" 
-                    />
-                    <input 
-                      required 
-                      value={item.quantity} 
-                      onChange={e => handleItemChange(index, "quantity", e.target.value)} 
-                      type="number" 
-                      min="1" 
-                      placeholder="Qty" 
-                      className="w-20 md:w-24 bg-[#0a0a0a] border border-gray-800 rounded-xl px-3 py-3 text-white focus:outline-none focus:border-orange-500 text-center" 
-                    />
-                    <input 
-                      required 
-                      value={item.price} 
-                      onChange={e => handleItemChange(index, "price", e.target.value)} 
-                      type="number" 
-                      placeholder="Price" 
-                      className="w-24 md:w-32 bg-[#0a0a0a] border border-gray-800 rounded-xl px-3 py-3 text-white focus:outline-none focus:border-orange-500 text-center" 
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => handleRemoveItem(index)} 
-                      disabled={items.length === 1}
-                      className="p-3 text-gray-500 hover:text-red-400 disabled:opacity-30 disabled:hover:text-gray-500 transition-colors bg-[#0a0a0a] border border-gray-800 rounded-xl"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                  <div key={index} className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-[#1a1a1a] md:bg-transparent p-3 md:p-0 rounded-xl border border-gray-800 md:border-none">
+                    <div className="w-full md:flex-1">
+                      <input 
+                        required 
+                        value={item.name} 
+                        onChange={e => handleItemChange(index, "name", e.target.value)} 
+                        type="text" 
+                        placeholder="Item name" 
+                        className="w-full bg-[#0a0a0a] border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500" 
+                      />
+                    </div>
+                    <div className="flex w-full md:w-auto gap-3 items-end md:items-center">
+                      <div className="flex-1 md:w-24">
+                        <label className="text-[10px] text-gray-500 md:hidden block mb-1 uppercase tracking-wider">Qty</label>
+                        <input 
+                          required 
+                          value={item.quantity} 
+                          onChange={e => handleItemChange(index, "quantity", e.target.value)} 
+                          type="number" 
+                          min="1" 
+                          placeholder="Qty" 
+                          className="w-full bg-[#0a0a0a] border border-gray-800 rounded-xl px-3 py-3 text-white focus:outline-none focus:border-orange-500 text-center" 
+                        />
+                      </div>
+                      <div className="flex-1 md:w-32">
+                        <label className="text-[10px] text-gray-500 md:hidden block mb-1 uppercase tracking-wider">Price</label>
+                        <input 
+                          required 
+                          value={item.price} 
+                          onChange={e => handleItemChange(index, "price", e.target.value)} 
+                          type="number" 
+                          min="0"
+                          placeholder="Price" 
+                          className="w-full bg-[#0a0a0a] border border-gray-800 rounded-xl px-3 py-3 text-white focus:outline-none focus:border-orange-500 text-center" 
+                        />
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => handleRemoveItem(index)} 
+                        disabled={items.length === 1}
+                        className="p-3 text-gray-500 hover:text-red-400 disabled:opacity-30 disabled:hover:text-gray-500 transition-colors bg-[#0a0a0a] border border-gray-800 rounded-xl h-[50px] w-[50px] shrink-0 flex items-center justify-center"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
