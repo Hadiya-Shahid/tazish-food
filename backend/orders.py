@@ -34,7 +34,7 @@ def create_order(order: OrderCreate):
     # Sync to Google Sheets
     sheet_success = googlesheets.append_order_to_sheet(data)
     if not sheet_success:
-        print("Failed to sync order to Google Sheets.")
+        raise HTTPException(status_code=500, detail="Failed to sync order to Google Sheets on the Cloud.")
         
     return data
 

@@ -19,9 +19,12 @@ def create_expense(expense: ExpenseCreate):
             response = database.supabase.table("expenses").insert(data).execute()
             if response.data: data = response.data[0]
         except Exception: pass
-        
+    # Sync to Google Sheets
     import googlesheets
-    googlesheets.append_expense(data)
+    sheet_success = googlesheets.append_expense(data)
+    if not sheet_success:
+        raise HTTPException(status_code=500, detail="Failed to sync expense to Google Sheets on the Cloud.")
+        
     return data
 
 @router.get("/", response_model=List[ExpenseResponse])

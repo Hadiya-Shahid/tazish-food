@@ -22,12 +22,32 @@ def get_client():
         return client
         
     try:
-        # Check if the credentials file exists
-        if not os.path.exists(CREDENTIALS_FILE):
-            print(f"Warning: Google credentials file '{CREDENTIALS_FILE}' not found.")
-            return None
+        import os
+        import json
+        from google.oauth2.service_account import Credentials
+        
+        env_cred = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "")
+        
+        # Check if the user pasted raw JSON into the environment variable directly
+        if env_cred.strip().startswith("{"):
+            cred_dict = json.loads(env_cred)
+            credentials = Credentials.from_service_account_info(cred_dict, scopes=SCOPES)
+        else:
+            # It's treating it as a file path
+            cred_file = env_cred if env_cred else "google_credentials.json"
             
-        credentials = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=SCOPES)
+            # If not in the local folder, check Render's default secret file mount location
+            if not os.path.exists(cred_file):
+                if os.path.exists(f"/etc/secrets/{cred_file}"):
+                    cred_file = f"/etc/secrets/{cred_file}"
+                elif os.path.exists(f"/etc/secrets/google_credentials.json"):
+                    cred_file = "/etc/secrets/google_credentials.json"
+                else:
+                    print(f"Warning: Google credentials file '{cred_file}' not found.")
+                    return None
+                    
+            credentials = Credentials.from_service_account_file(cred_file, scopes=SCOPES)
+            
         client = gspread.authorize(credentials)
         return client
     except Exception as e:
