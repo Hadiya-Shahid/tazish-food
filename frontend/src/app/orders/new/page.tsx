@@ -49,7 +49,7 @@ export default function CreateOrder() {
       return;
     }
     
-    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert("Voice recognition is not supported in this browser. Try Chrome or Safari.");
       return;
