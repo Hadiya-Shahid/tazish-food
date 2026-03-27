@@ -18,8 +18,8 @@ export default function CreateOrder() {
 
   // Menu Auto-Complete State
   const [menuItems, setMenuItems] = useState<string[]>([]);
+  const [activeDropdownIndex, setActiveDropdownIndex] = useState<number | null>(null);
 
-  
   useEffect(() => {
     // Load saved menu items on mount
     const saved = localStorage.getItem("tazish_menu_items");
@@ -248,25 +248,38 @@ export default function CreateOrder() {
                 </button>
               </div>
               
-              <datalist id="menu-items">
-                {menuItems.map((name, i) => (
-                  <option key={i} value={name} />
-                ))}
-              </datalist>
-
               <div className="space-y-3">
                 {items.map((item, index) => (
-                  <div key={index} className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-[#1a1a1a] md:bg-transparent p-3 md:p-0 rounded-xl border border-gray-800 md:border-none">
-                    <div className="w-full md:flex-1">
+                  <div key={index} className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-[#1a1a1a] md:bg-transparent p-3 md:p-0 rounded-xl border border-gray-800 md:border-none relative">
+                    <div className="w-full md:flex-1 relative">
                       <input 
                         required 
                         value={item.name} 
                         onChange={e => handleItemChange(index, "name", e.target.value)} 
+                        onFocus={() => setActiveDropdownIndex(index)}
+                        onBlur={() => setTimeout(() => setActiveDropdownIndex(null), 200)}
                         type="text" 
-                        list="menu-items"
+                        autoComplete="off"
                         placeholder="Item name" 
                         className="w-full bg-[#0a0a0a] border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500" 
                       />
+                      
+                      {activeDropdownIndex === index && menuItems.length > 0 && (
+                        <div className="absolute left-0 right-0 top-[calc(100%+5px)] bg-[#1a1a1a] border border-gray-800 rounded-xl shadow-2xl z-[150] max-h-48 overflow-y-auto animate-in slide-in-from-top-2 duration-200">
+                          {menuItems
+                            .filter(m => !item.name || m.toLowerCase().includes(item.name.toLowerCase()))
+                            .map((name, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onMouseDown={() => handleItemChange(index, "name", name)}
+                                className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-orange-500/10 hover:text-orange-400 border-b border-gray-800/50 last:border-none transition-colors"
+                              >
+                                {name}
+                              </button>
+                            ))}
+                        </div>
+                      )}
                     </div>
                     <div className="flex w-full md:w-auto gap-3 items-end md:items-center">
                       <div className="flex-1 md:w-24">
