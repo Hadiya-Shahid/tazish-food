@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Mic, Image as ImageIcon, Keyboard, Send, Plus, Trash2, Loader2, StopCircle } from "lucide-react";
 
 export default function CreateOrder() {
@@ -19,7 +19,6 @@ export default function CreateOrder() {
   // Menu Auto-Complete State
   const [menuItems, setMenuItems] = useState<string[]>([]);
 
-  import { useEffect } from "react";
   
   useEffect(() => {
     // Load saved menu items on mount
