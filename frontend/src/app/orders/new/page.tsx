@@ -16,6 +16,19 @@ export default function CreateOrder() {
   const [isUploading, setIsUploading] = useState(false);
   const recognitionRef = useRef<any>(null);
 
+  // Menu Auto-Complete State
+  const [menuItems, setMenuItems] = useState<string[]>([]);
+
+  import { useEffect } from "react";
+  
+  useEffect(() => {
+    // Load saved menu items on mount
+    const saved = localStorage.getItem("tazish_menu_items");
+    if (saved) {
+      try { setMenuItems(JSON.parse(saved)); } catch(e) {}
+    }
+  }, []);
+
   const handleAddItem = () => {
     setItems([...items, { name: "", quantity: 1, price: "" }]);
   };
@@ -157,6 +170,12 @@ export default function CreateOrder() {
         throw new Error(errData.detail || "Failed to create order");
       }
       
+      // Save new unique item names to local menu
+      const newNames = items.map(i => i.name.trim()).filter(Boolean);
+      const updatedMenu = Array.from(new Set([...menuItems, ...newNames])).sort();
+      setMenuItems(updatedMenu);
+      localStorage.setItem("tazish_menu_items", JSON.stringify(updatedMenu));
+
       setStatus("success");
       setCustomerName("");
       setAdvancePayment("");
@@ -230,6 +249,12 @@ export default function CreateOrder() {
                 </button>
               </div>
               
+              <datalist id="menu-items">
+                {menuItems.map((name, i) => (
+                  <option key={i} value={name} />
+                ))}
+              </datalist>
+
               <div className="space-y-3">
                 {items.map((item, index) => (
                   <div key={index} className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-[#1a1a1a] md:bg-transparent p-3 md:p-0 rounded-xl border border-gray-800 md:border-none">
@@ -239,6 +264,7 @@ export default function CreateOrder() {
                         value={item.name} 
                         onChange={e => handleItemChange(index, "name", e.target.value)} 
                         type="text" 
+                        list="menu-items"
                         placeholder="Item name" 
                         className="w-full bg-[#0a0a0a] border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500" 
                       />
