@@ -352,8 +352,7 @@ export default function CreateOrder() {
               <label className="border-2 border-dashed border-gray-700 hover:border-orange-500/50 bg-[#0a0a0a] rounded-2xl p-12 w-full max-w-md text-center transition-colors cursor-pointer group">
                 <input 
                   type="file" 
-                  accept="image/*" 
-                  capture="environment"
+                  accept="image/*"
                   className="hidden" 
                   onChange={handleImageUpload} 
                 />
