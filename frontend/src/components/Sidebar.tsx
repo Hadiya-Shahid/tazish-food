@@ -1,10 +1,19 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ListOrdered, LayoutDashboard, PlusCircle, Receipt, LineChart } from "lucide-react";
+import { ListOrdered, LayoutDashboard, PlusCircle, Receipt, LineChart, LogOut } from "lucide-react";
 
 export function Sidebar() {
   const pathname = usePathname();
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth', { method: 'DELETE' });
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout failed', error);
+    }
+  };
 
   const links = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -45,9 +54,12 @@ export function Sidebar() {
           })}
         </nav>
         <div className="p-6 border-t border-gray-800">
-          <div className="text-xs text-center text-gray-600">
+          <div className="text-xs text-center text-gray-600 mb-4">
             Sync Status: <span className="text-green-500 px-1">●</span> Online
           </div>
+          <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl transition-colors text-sm font-medium border border-red-500/20">
+            <LogOut size={16} /> Logout
+          </button>
         </div>
       </aside>
 
@@ -69,6 +81,13 @@ export function Sidebar() {
               </Link>
             );
         })}
+        <button
+          onClick={handleLogout}
+          className="flex flex-col items-center justify-center w-16 transition-all duration-300 text-red-500/80 hover:text-red-400"
+        >
+          <LogOut size={22} className="mb-1" strokeWidth={2} />
+          <span className="text-[10px] font-medium tracking-wide truncate">Logout</span>
+        </button>
       </nav>
     </>
   );
