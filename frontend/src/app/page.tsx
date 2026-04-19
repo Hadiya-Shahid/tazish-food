@@ -12,12 +12,26 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 export default function Home() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/orders/`)
-      .then(res => res.json())
-      .then(data => setOrders(Array.isArray(data) ? data : []))
-      .catch(console.error)
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    fetch(`${apiUrl}/api/orders/`)
+      .then(async res => {
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`API responded with ${res.status}: ${errText} (URL: ${apiUrl})`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        setOrders(Array.isArray(data) ? data : []);
+        setError(null);
+      })
+      .catch((e: any) => {
+        console.error("Dashboard fetch error:", e);
+        setError(`Connection Error: ${e.message} (Is NEXT_PUBLIC_API_URL correct?)`);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -112,6 +126,11 @@ export default function Home() {
           <div className="flex-1 flex flex-col gap-4 text-gray-500 h-full overflow-y-auto">
             {loading ? (
               <div className="flex h-full items-center justify-center"><Loader2 className="animate-spin text-orange-500" /></div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center bg-red-500/10 p-4 rounded-xl border border-red-500/20 text-red-400 text-sm text-center">
+                <p className="font-bold mb-1">Server Error</p>
+                <p className="break-all">{error}</p>
+              </div>
             ) : orders.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center text-center">
                  <Package size={48} className="opacity-20 mb-2" />
