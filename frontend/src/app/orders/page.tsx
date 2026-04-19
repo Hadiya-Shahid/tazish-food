@@ -5,6 +5,7 @@ import { Search, Filter, MoreHorizontal, CheckCircle2, Clock, Loader2 } from "lu
 export default function Orders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -12,13 +13,21 @@ export default function Orders() {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/orders/`);
+      setLoading(true);
+      setError(null);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      console.log("Fetching from:", apiUrl);
+      const res = await fetch(`${apiUrl}/api/orders/`);
       if (res.ok) {
         const data = await res.json();
-        setOrders(data);
+        setOrders(Array.isArray(data) ? data : []);
+      } else {
+        const errText = await res.text();
+        setError(`API responded with ${res.status}: ${errText} (URL: ${apiUrl})`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch orders:", error);
+      setError(`Failed to connect to backend: ${error.message} (Is your NEXT_PUBLIC_API_URL correct?)`);
     } finally {
       setLoading(false);
     }
@@ -77,6 +86,15 @@ export default function Orders() {
                     <div className="flex flex-col items-center justify-center">
                       <Loader2 size={32} className="mb-3 animate-spin opacity-50 text-orange-500" />
                       <p>Loading orders from Google Sheets...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-red-400">
+                    <div className="flex flex-col items-center justify-center bg-red-500/10 p-6 rounded-xl border border-red-500/20 max-w-lg mx-auto">
+                      <p className="font-bold mb-2">Connection Issue Detected!</p>
+                      <p className="text-sm font-mono text-left break-all">{error}</p>
                     </div>
                   </td>
                 </tr>
